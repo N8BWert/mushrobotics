@@ -18,4 +18,4 @@ In the OpenThread standard, there are multiple types of connected devices.  One 
 
 I'm not currently happy with the name, but Mushrobotics Add is another device that can be added to the network of devices that can serve as OpenThread's Sleepy End Device (SED).  The idea of a SED is that the device can consume as little power as possible by only waking up at discrete intervals while the thread router buffers instructions to it.  I like this idea, so I would like to make a few additional mushroom farming robots that can serve as sleepy end devices, only waking up periodically to send information to the Mushrobotics Home device.  In addition, the Mushrobotics Add will likely be run with a Raspberry Pi Pico (my personal favorite microcontroller) and will, therefore, be an embedded program (probably using RTIC, my favorite RTOS) which will both present its own challenges and rewards.
 
-#### Last Updated: 1/18/2024
+#### Last Updated: January 18, 2024
