@@ -34,6 +34,6 @@ In this example, the right-most node can be labeled 1.1.1, 1.3.1, 2.1.1, and 2.3
 
 ## Inspirations
 
-* [OpenThread]()
+* [OpenThread](https://openthread.io/)
 
 #### Last Updated: January 18, 2024
