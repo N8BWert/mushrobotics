@@ -58,6 +58,14 @@ Now that the removal cases are documented, it is necessary to revisit the additi
 
 **Note**: In the examples above of nodes switching places.  The node taking the place of the parent effectively takes their identity and now has that nodes device ID.  This is propagated back to the router, so the node status metadata can be updated accordingly.
 
+Although the above discussion is all fine and dandy it is probably necessary for me to actually make real protocol decisions now.  Mainly I should probably specify packet-related stuff and do some pairing process stuff (you-know the fun stuff).  While I'm writing out this, it is necessary for me to keep in mind that I would like to use the nRF24L01+ as my radio transmitter and receiver (hey, its cheap and I'm broke).  Below is a picture of the enhanced-shockburst packet format, but really the most important part of the packet is the fact that the payload is 32 Bytes.
+
+![Enhanced Shockburst Packet](./documentation/nRF24L01Packet.png)
+
+A few important things about every good packet is a to address, a from address, and data.  Normally, creating a to and from address is super simple because internet addresses are usually fixed length. Unfortunately, however, I chose the dual tree so I can't exactly do this.  However, I can take the principle of huffman encodings to make the 4-bit number 0b1000 or 8 and use this to delineate the end of an address.  Basically, an address can now be shortened where the first 4 bits of a byte is the first number in an address and the second 4 bits of a byte are the second number in the address.  For example, the address 1.2.3 would be written as [0b0001_0010, 0b0011_1000] or [0x12, 0x38].  The shortest address length is 1 byte, therefore, the data part of the packet can be 0-31 bytes long.  I could offset the data to try and cram in 1 or 2 more bits, however I think its fine to just use the byte following the address as the payload length.  This leaves 0-30 bytes for the payload (obviously this depends on the address length)
+
+However, most of the communication in the network is likely to be parent to child so adding all of the address bits is quiet redundant.  I think to fix this we can use another postfix to denote that the packet is directly from the parent.  For this postfix I will choose 9 or 0b1001.  Therefore, if parent is sending a message to its child it can use a 1 byte address.  If I am going to give the parents the power of a new postfix, I might as well do the same for a child.  For the child, I will choose 0xA or 0b1010 which can be used by a child to directly address its parent without needing the whole address.
+
 ## Inspirations
 
 * [OpenThread](https://openthread.io/)
