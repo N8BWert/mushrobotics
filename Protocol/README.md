@@ -38,6 +38,26 @@ I think I can solve the ambiguity problem by giving each device a router assigne
 
 With this model, leaves further down the tree have significantly higher redundancy, which isn't necessarily a bad thing.  I don't, however, think I have the capitol or reason to make more than 40 robotic mushroom farmers in my apartment so I'm pretty sure I won't have any more than 2 redundancies which is much easier to deal with.  In the future, I would probably recommend just utilizing thread for an actual greenhouse / production situation because it doesn't blow up in redundancy with the addition of new nodes.  But, if massive amounts of redundancy are necessary I guess my solution would work brilliantly for large numbers of connected devices.
 
+Now that the address mapping is complete, the next step is to define the addition and removal of nodes to the network.  For the first 8 mushroom farming robots (which I will call the root nodes), the pairing process is incredibly simple. These robots will form the first pair of 8 robots.  I think this makes sense because realistically speaking there is no need to add any complexity yet and the death / power-off of these robots doesn't need to be complex in the beginning.  Then comes the addition of first children nodes (i.e. the 1st wave).  I think realistically it makes sense to stagger their entrance to keep a balanced tree.  Basically, this just means that each root node will fill their 1st wave robots in parallel.  Overall, my goal with additions and deletions is to try to keep a balanced tree so I can minimize the network depth and, therefore, the storage and complexity requirements.
+
+The diagram below illustrates a few different node addition cases and how the network should react to them:
+
+![Adding Nodes](./documentation/AddingNodes.png)
+
+Next comes the more complicated part of the problem.  Removing nodes.  Removing nodes can be both intentional and unintentional.  For an intentional node removal, a robot may need maintenance, in which case there should be some button or built-in alert on the robot to alert the network to a network rewire.  A common unintentional node removal would be a robot dying or being destroyed in an accident.  In the robot dying example, it may be necessary to add a low-battery alert signal into the robots so the network can move them to the leaves (making removal easier).  However, in an accident there is no real way to predict the death of a robot so a network rework will be definitely necessary.
+
+The main cases for removal is the removal of a leaf node.  This is the easiest case and the node should wait until its parent is receiving and tell them that they are going to die. In which case they can be powered off.  In the case of an unintentional removal of a leaf node, the parent should use maximum retries to reach the node.  After the last retry, if the leaf has not responded, the parent should propagate the node's death to the router through its parent(s). If, instead, a node with children is to be removed, the situation is a bit more complex.  If a node is receiving an intentional power-off, the node should promote one of it's children to its situation (making its way towards the leaf).  Once it becomes a leaf, the node should propagate a signal to the router that it is going offline.  If a parent node is removed unintentionally, then it's parents should realize it has become unresponsive and should ask the router for a promotion(s) which they will perform with a child node.  A visual of these removal cases is shown below:
+
+![Removing Nodes](./documentation/RemovingNodes.png)
+
+The above cases are more-or-less the best case scenarios for the nodes.  The worst case scenario is a clump of robots unintentionally being removed at once.  This brings the final removal case, or removal of two parents.  If both parents of a node are removed, the network does have the ability to repair itself (namely because the router has pretty much perfect information).  First, the parents of the dead nodes (or the router if it is a root node) will send to the router the dead nodes.  Now, the router must figure out what to do with the children of the dead node.  To do this, the router can assign a node from each level as the new parent (i.e. promote a node) until the tree form is restored.  This is illustrated below:
+
+![Worst Case Node Removal](./documentation/WorstCaseNodeRemoval.png)
+
+Now that the removal cases are documented, it is necessary to revisit the addition of a new node.  When a node is removed, the format of the complete balanced dual tree is altered.  This is ok, however the router should record the locations of removed nodes and make certain that the next addition fills in the location of a previously removed node to help to maintain a complete balanced dual tree.
+
+**Note**: In the examples above of nodes switching places.  The node taking the place of the parent effectively takes their identity and now has that nodes device ID.  This is propagated back to the router, so the node status metadata can be updated accordingly.
+
 ## Inspirations
 
 * [OpenThread](https://openthread.io/)
