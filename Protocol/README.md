@@ -32,8 +32,14 @@ Ideally, this should allow me to specify addresses in terms of parent, child, gr
 
 In this example, the right-most node can be labeled 1.1.1, 1.3.1, 2.1.1, and 2.3.1.  This ambiguity is definitely a bit difficult so I will be attempting to come up with a solution in the near future.
 
+I think I can solve the ambiguity problem by giving each device a router assigned ID (kind of like a MAC address except its assigned).  With this, I can associate the ip's as part of the Node part in a vector of u8s.  Specifically, I can make the first 4 bits the first possible address set and the second 4 bits the second possible address.  This makes storing the addresses 2*n storage instead of 2^n which is important (although the depth of the tree is unlikely to grow significantly).  This means that Node addresses can be expressed as below (which I'm still working on a formula for):
+
+![Node Address Mapping](./documentation/NodeAddressMapping.png)
+
+With this model, leaves further down the tree have significantly higher redundancy, which isn't necessarily a bad thing.  I don't, however, think I have the capitol or reason to make more than 40 robotic mushroom farmers in my apartment so I'm pretty sure I won't have any more than 2 redundancies which is much easier to deal with.  In the future, I would probably recommend just utilizing thread for an actual greenhouse / production situation because it doesn't blow up in redundancy with the addition of new nodes.  But, if massive amounts of redundancy are necessary I guess my solution would work brilliantly for large numbers of connected devices.
+
 ## Inspirations
 
 * [OpenThread](https://openthread.io/)
 
-#### Last Updated: January 18, 2024
+#### Last Updated: January 19, 2024
