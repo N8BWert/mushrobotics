@@ -66,6 +66,30 @@ A few important things about every good packet is a to address, a from address, 
 
 However, most of the communication in the network is likely to be parent to child so adding all of the address bits is quiet redundant.  I think to fix this we can use another postfix to denote that the packet is directly from the parent.  For this postfix I will choose 9 or 0b1001.  Therefore, if parent is sending a message to its child it can use a 1 byte address.  If I am going to give the parents the power of a new postfix, I might as well do the same for a child.  For the child, I will choose 0xA or 0b1010 which can be used by a child to directly address its parent without needing the whole address.
 
+In the nRF24L01 documentation, it mentions that addresses with with only one toggle (i.e. 0x0F) are advised against.  Also preamble continuations are advised against (i.e. 0b101010 or 0b010101).  There are two possible preamble continuations (0b10... and 0b01...), 39 one toggle situations and 2 all 1s or 0s situations.  This leaves a total of 2^40 - 43 possible addresses.  For the general format of these addresses please see Forbidden Addresses.
+
+To save a bit of trouble, it also will be useful to reserve at least one address for use by the router and possibly a second address just in case (probably for pairing).  The saved addresses will be [0x4E, 0x61, 0x74, 0x65, 0x21] and [0x21, 0x65, 074, 0x61, 0x4E] for no reason other than I like the addresses.
+
+TODO: Designate protocol for assigning nodes a nRF24L01 address.
+
+
+
+## Reserved Addresses
+
+* [0x4E, 0x61, 0x74, 0x65, 0x21] - Base Station Receive Address
+* [0x21, 0x65, 0x74, 0x61, 0x4E] - Pairing Address
+
+## Forbidden Addresses
+
+* [0x00, 0x00, 0x00, 0x00 ,0x00]
+* [0x00, 0x00, 0x00, 0x00, 0x01]
+* [0x00, 0x00, 0x00, 0x00, 0x03]
+* ...
+* [0x7F, 0x7F, 0x7F, 0x7F, 0x7F]
+* [0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
+* [0xAA, 0xAA, 0xAA, 0xAA, 0xAA]
+* [0x55, 0x55, 0x55, 0x55, 0x55]
+
 ## Inspirations
 
 * [OpenThread](https://openthread.io/)
