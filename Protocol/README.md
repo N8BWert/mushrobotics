@@ -70,8 +70,7 @@ In the nRF24L01 documentation, it mentions that addresses with with only one tog
 
 To save a bit of trouble, it also will be useful to reserve at least one address for use by the router and possibly a second address just in case (probably for pairing).  The saved addresses will be [0x4E, 0x61, 0x74, 0x65, 0x21] and [0x21, 0x65, 074, 0x61, 0x4E] for no reason other than I like the addresses.
 
-TODO: Designate protocol for assigning nodes a nRF24L01 address.
-
+The address assignment algorithm I'm going to use is incredibly simple.  Basically, the base station is 0x4E61746521 (which is a bit of an anomaly), then fore each following robot added to the network, their address will be their node number subtracted from the max address 0xFFFFFFFFFF.  For example, robot 10 would be 0xFFFFFFFFFF - 0xA.  However, this means that some addresses may overlap with forbidden addresses.  In this case, I will keep track of the number of skipped addresses and assign the robot to the next available address. The main benefit of this assignment algorithm is it keeps everything incredibly simple and neighboring nodes share adjacent addresses which (almost always), means that the node will be on the same network mask, allowing for me to utilize additional enhanced shockburst functionalities.
 
 
 ## Reserved Addresses
@@ -94,4 +93,4 @@ TODO: Designate protocol for assigning nodes a nRF24L01 address.
 
 * [OpenThread](https://openthread.io/)
 
-#### Last Updated: January 19, 2024
+#### Last Updated: January 31, 2024
