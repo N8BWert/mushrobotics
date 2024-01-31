@@ -72,6 +72,10 @@ To save a bit of trouble, it also will be useful to reserve at least one address
 
 The address assignment algorithm I'm going to use is incredibly simple.  Basically, the base station is 0x4E61746521 (which is a bit of an anomaly), then fore each following robot added to the network, their address will be their node number subtracted from the max address 0xFFFFFFFFFF.  For example, robot 10 would be 0xFFFFFFFFFF - 0xA.  However, this means that some addresses may overlap with forbidden addresses.  In this case, I will keep track of the number of skipped addresses and assign the robot to the next available address. The main benefit of this assignment algorithm is it keeps everything incredibly simple and neighboring nodes share adjacent addresses which (almost always), means that the node will be on the same network mask, allowing for me to utilize additional enhanced shockburst functionalities.
 
+## Directory Layout
+
+The mushrobotics protocol project and implementation is layed out as the base protocol in protocol/mushrobotics-protocol directory with macros in the protocol/mushrobotics-protocol-derive directory.
+
 
 ## Reserved Addresses
 

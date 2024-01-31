@@ -1,0 +1,13 @@
+[workspace]
+members = [
+    "mushrobotics-protocol",
+    "mushrobotics-protocol-derive",
+]
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.75"
+
+[patch.crates-io]
+mushrobotics-protocol = { path = "mushrobotics-protocol" }
+mushrobotics-protocol-derive = { path = "mushrobotics-protocol-derive" }
