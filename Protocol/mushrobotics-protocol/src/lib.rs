@@ -1,14 +1,12 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+//!
+//! The Mushrobotics-protocol library contains necessary traits and helpers to make
+//! utilizing the protocol outlined in the README.md easier to implement.
+//! 
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#![no_std]
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+extern crate alloc;
+
+pub mod packet;
+pub use packet::*;
+

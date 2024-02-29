@@ -5,3 +5,6 @@ Cargo.lock
 # MacOS Stuff
 .DS_Store
 **/.DS_Store
+
+# Vscode Stuff
+.vscode/*
