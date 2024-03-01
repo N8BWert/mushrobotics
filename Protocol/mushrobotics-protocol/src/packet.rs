@@ -2,8 +2,6 @@ mod pack;
 
 pub use pack::{Pack, PackError};
 
-use core::cmp::min;
-
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 
@@ -71,6 +69,35 @@ impl<'a> Address<'a> {
     }
 }
 
+impl<'a> From<&[u8; 32]> for Address<'a> {
+    fn from(value: &[u8; 32]) -> Self {
+        match value[0] {
+            0xA0 => Address::Local(LocalAddress::ToParent),
+            0x90 => Address::Local(LocalAddress::ToParent),
+            _ => {
+                let mut from_length = 0;
+                for i in 0..32 {
+                    if (value[i] & 0xF0) == 0 {
+                        break;
+                    } else {
+                        from_length += 1;
+                    }
+
+                    if (value[i] & 0x0F) == 0 {
+                        break;
+                    } else {
+                        from_length += 1;
+                    }
+                }
+
+                let mut to_length = 0;
+
+                Address::Network { from: &[1, 2, 3], to: &[3, 2, 1] }
+            }
+        }
+    }
+}
+
 /// A packet to be sent over the mushrobotics network.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Packet<Data: Pack<SIZE>, const SIZE: usize> {
@@ -117,34 +144,33 @@ impl<'a, Data: Pack<SIZE>, const SIZE: usize> Packet<Data, SIZE> {
     }
 
     pub fn pack_payload(mut self) -> Result<Box<[[u8; 32]]>, PackError> {
-        let total_bytes = self.prelude_length + SIZE;
-        if total_bytes > (u16::MAX as usize) {
+        let total_size = self.prelude_length + SIZE;
+        if total_size > (u16::MAX as usize) {
             return Err(PackError::NotEnoughSpace);
         }
-    
-        let total_frames = total_bytes.div_ceil(32);
-        let mut frames = Vec::with_capacity(total_frames);
 
-        let data_bytes = self.data.pack();
-        self.first_packet[self.prelude_length..min(32, self.prelude_length+SIZE)]
-            .copy_from_slice(&data_bytes[..min(data_bytes.len(), self.prelude_length+SIZE)]);
-        frames.push(self.first_packet);
+        let data = self.data.pack();
 
-        let remaining_data = &data_bytes[min(data_bytes.len(), self.prelude_length+SIZE)..];
-        if remaining_data.len() == 0 {
-            return Ok(frames.into_boxed_slice());
+        if total_size <= 32 {
+            self.first_packet[self.prelude_length..(self.prelude_length+SIZE)].copy_from_slice(&data[..]);
+            return Ok(Box::new([self.first_packet]));
         }
 
-        if remaining_data.len() > 32 {
-            for i in 0..(remaining_data.len() / 32)-1 {
-                let mut buffer = [0u8; 32];
-                buffer.copy_from_slice(&remaining_data[(i*32)..(i+1)*32]);
-                frames.push(buffer);
-            }
+        self.first_packet[self.prelude_length..].copy_from_slice(&data[..(32-self.prelude_length)]);
+        
+        let total_frames = total_size.div_ceil(32);
+        let mut frames = Vec::with_capacity(total_frames);
+        frames.push(self.first_packet);
+
+        let data = &data[(32-self.prelude_length)..];
+        for i in 0..(total_frames-2) {
+            let mut buffer = [0u8; 32];
+            buffer.copy_from_slice(&data[(32*i)..(32*(i+1))]);
+            frames.push(buffer);
         }
 
         let mut buffer = [0u8; 32];
-        buffer.copy_from_slice(&remaining_data[(remaining_data.len()/32)..]);
+        buffer[..(total_size%32)].copy_from_slice(&data[(32*(total_frames-2))..]);
         frames.push(buffer);
 
         Ok(frames.into_boxed_slice())
@@ -157,7 +183,7 @@ mod tests {
 
     impl Pack<2> for u16 {
         fn pack(self) -> [u8; 2] {
-            [((self & 0xFF00) >> 4) as u8, (self & 0xFF) as u8]
+            [((self & 0xFF00) >> 8) as u8, (self & 0xFF) as u8]
         }
     }
 
@@ -323,16 +349,61 @@ mod tests {
 
     #[test]
     fn test_to_parent_pack_large() {
+        let mut data = [0u32; 32];
+        for i in 0..32 {
+            data[i] = i as u32;
+        }
+        let packet = Packet::to_parent(data);
+        let payload = packet.pack_payload().unwrap();
 
+        let mut expected_payload = [[0u8; 32]; 5];
+        expected_payload[0][0] = 0xA0;
+        for i in 0..32 {
+            let x = (4 * i) + 4;
+            expected_payload[x/32][x%32] = i as u8;
+        }
+
+        assert_eq!(*payload, expected_payload);
     }
 
     #[test]
     fn test_to_child_pack_large() {
+        let mut data = [0u32; 32];
+        for i in 0..32 {
+            data[i] = i as u32;
+        }
+        let packet = Packet::to_child(data);
+        let payload = packet.pack_payload().unwrap();
 
+        let mut expected_payload = [[0u8; 32]; 5];
+        expected_payload[0][0] = 0x90;
+        for i in 0..32 {
+            let x = (4 * i) + 4;
+            expected_payload[x/32][x%32] = i as u8;
+        }
+
+        assert_eq!(*payload, expected_payload);
     }
 
     #[test]
     fn to_network_pack_large() {
-        
+        let mut data = [0u32; 32];
+        for i in 0..32 {
+            data[i] = i as u32;
+        }
+        let packet = Packet::to_address(&[1, 2, 3], &[3, 2, 1], data);
+        let payload = packet.pack_payload().unwrap();
+
+        let mut expected_payload = [[0u8; 32]; 5];
+        expected_payload[0][0] = 0x12;
+        expected_payload[0][1] = 0x30;
+        expected_payload[0][2] = 0x32;
+        expected_payload[0][3] = 0x10;
+        for i in 0..32 {
+            let x = (4 * i) + 7;
+            expected_payload[x/32][x%32] = i as u8;
+        }
+
+        assert_eq!(*payload, expected_payload);
     }
 }
