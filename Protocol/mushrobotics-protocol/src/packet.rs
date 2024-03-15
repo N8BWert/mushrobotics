@@ -2,12 +2,34 @@
 //! The Implementation of a Packet for the Mushrobotics Protocol
 //! 
 
-mod pack;
-
-pub use pack::{Pack, PackError, Frame};
-
 use alloc::boxed::Box;
 use alloc::vec::Vec;
+
+/// A Frame is a 32 Byte window of data
+pub type Frame = [u8; 32];
+
+/// Trait implemented by data in packets to ensure it can be converted
+/// into a u8 slice
+///
+/// In general, I would suggest using big endian, but I guess it doesn't really matter
+pub trait Pack<const SIZE: usize> {
+    /// Convert this data into a [u8] slice
+    fn pack(self) -> [u8; SIZE];
+}
+
+/// Error Packing some data type
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum PackError {
+    // There is enough space
+    NotEnoughSpace
+}
+
+/// Trait implemented by data in packets to ensure it can be converted from
+/// frames back to the original data
+pub trait Unpack {
+    /// Decipher the Address and Data from a slice of Frames
+    fn unpack(data: &[Frame]) -> (Address, Self);
+}
 
 /// Local address options (i.e. the local address is either
 /// going to the parent or the child)
