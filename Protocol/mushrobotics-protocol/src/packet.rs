@@ -145,11 +145,12 @@ impl<Data: Pack<SIZE>, const SIZE: usize> Packet<Data, SIZE> {
     /// Create a packet with given data addressed to a node's child
     pub fn to_child(data: Data) -> Result<Self, PackError> {
         let (mut first_packet, prelude_length) = Address::Local(LocalAddress::ToChild).to_first_packet();
-        if SIZE > (u16::MAX as usize) {
+
+        let total_size = (prelude_length + 2 + SIZE) / 32;
+        if total_size > (u16::MAX as usize) {
             return Err(PackError::NotEnoughSpace);
         }
-
-        let bytes = SIZE.to_le_bytes();
+        let bytes = total_size.to_le_bytes();
         first_packet[prelude_length] = bytes[1];
         first_packet[prelude_length+1] = bytes[0];
 
@@ -163,11 +164,12 @@ impl<Data: Pack<SIZE>, const SIZE: usize> Packet<Data, SIZE> {
     /// Create a packet with given data addresses to a node's parent
     pub fn to_parent(data: Data) -> Result<Self, PackError> {
         let (mut first_packet, prelude_length) = Address::Local(LocalAddress::ToParent).to_first_packet();
-        if SIZE > (u16::MAX as usize) {
+
+        let total_size = (prelude_length + 2 + SIZE) / 32;
+        if total_size > (u16::MAX as usize) {
             return Err(PackError::NotEnoughSpace);
         }
-
-        let bytes = SIZE.to_le_bytes();
+        let bytes = total_size.to_le_bytes();
         first_packet[prelude_length] = bytes[1];
         first_packet[prelude_length+1] = bytes[0];
 
@@ -184,11 +186,12 @@ impl<Data: Pack<SIZE>, const SIZE: usize> Packet<Data, SIZE> {
     /// to use
     pub fn to_address(from: &[u8], to: &[u8], data: Data) -> Result<Self, PackError> {
         let (mut first_packet, prelude_length) = Address::Network { from: from.into(), to: to.into() }.to_first_packet();
-        if SIZE > (u16::MAX as usize) {
+
+        let total_size = (prelude_length + 2 + SIZE) / 32;
+        if total_size > (u16::MAX as usize) {
             return Err(PackError::NotEnoughSpace);
         }
-
-        let bytes = SIZE.to_le_bytes();
+        let bytes = total_size.to_le_bytes();
         first_packet[prelude_length] = bytes[1];
         first_packet[prelude_length+1] = bytes[0];
 
@@ -369,7 +372,7 @@ mod tests {
         let mut expected_payload = [0u8; 32];
         expected_payload[0] = 0xA0;
         expected_payload[1] = 0x00;
-        expected_payload[2] = 0x02;
+        expected_payload[2] = 0x00;
         expected_payload[3] = 0x3F;
         expected_payload[4] = 0x21;
 
@@ -384,7 +387,7 @@ mod tests {
         let mut expected_payload = [0u8; 32];
         expected_payload[0] = 0x90;
         expected_payload[1] = 0x00;
-        expected_payload[2] = 0x02;
+        expected_payload[2] = 0x00;
         expected_payload[3] = 0x32;
         expected_payload[4] = 0x14;
 
@@ -402,7 +405,7 @@ mod tests {
         expected_payload[2] = 0x32;
         expected_payload[3] = 0x10;
         expected_payload[4] = 0x00;
-        expected_payload[5] = 0x02;
+        expected_payload[5] = 0x00;
         expected_payload[6] = 0x19;
         expected_payload[7] = 0x23;
 
@@ -421,7 +424,7 @@ mod tests {
         let mut expected_payload = [[0u8; 32]; 5];
         expected_payload[0][0] = 0xA0;
         expected_payload[0][1] = 0x00;
-        expected_payload[0][2] = 0x80;
+        expected_payload[0][2] = 0x04;
         for i in 0..32 {
             let x = (4 * i) + 6;
             expected_payload[x/32][x%32] = i as u8;
@@ -442,7 +445,7 @@ mod tests {
         let mut expected_payload = [[0u8; 32]; 5];
         expected_payload[0][0] = 0x90;
         expected_payload[0][1] = 0x00;
-        expected_payload[0][2] = 0x80;
+        expected_payload[0][2] = 0x04;
         for i in 0..32 {
             let x = (4 * i) + 6;
             expected_payload[x/32][x%32] = i as u8;
@@ -466,7 +469,7 @@ mod tests {
         expected_payload[0][2] = 0x32;
         expected_payload[0][3] = 0x10;
         expected_payload[0][4] = 0x00;
-        expected_payload[0][5] = 0x80;
+        expected_payload[0][5] = 0x04;
         for i in 0..32 {
             let x = (4 * i) + 9;
             expected_payload[x/32][x%32] = i as u8;
